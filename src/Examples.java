@@ -4,7 +4,21 @@ import java.util.List;
 
 public class Examples {
 
+	private final static StringBuilder SEQ1 = new StringBuilder("ATTGCCATT");
+	private final static StringBuilder SEQ2 = new StringBuilder("ATGGCCATT");
+	private final static StringBuilder SEQ3 = new StringBuilder("ATCCAATTTT");
+	private final static StringBuilder SEQ4 = new StringBuilder("ATCTTCTT");
+	private final static StringBuilder SEQ5 = new StringBuilder("ACTGACC");
+
 	public static void main(String[] args) {
+
+		final List<StringBuilder> seqs = new ArrayList<StringBuilder>();
+		seqs.add(SEQ2);
+		seqs.add(SEQ3);
+		seqs.add(SEQ4);
+		seqs.add(SEQ5);
+
+		(starAlignment(SEQ1, seqs)).forEach(System.out::println);
 	}
 	
 	private static double shannonEntropy(String s) {
@@ -82,7 +96,7 @@ public class Examples {
 	}
 
 	/**
-	 * Merging the sequences in stair alignment:
+	 * Merging the sequences in star alignment:
 	 * • Use the anchor as the "guide" sequence
 	 * • Add iteratively each pair-wise alignment to the multiple alignment
 	 * • Go column by column:
@@ -98,19 +112,44 @@ public class Examples {
 	 * 
 	 * @param anchor Anchor
 	 * @param seqs Sequences
+	 * 
+	 * @return result
 	 */
-	private static void onceGapAlwaysGap(StringBuilder anchor, ArrayList<StringBuilder> seqs) {
-		
-		StringBuilder[] aligned;
-		int[][] dp;
+	private static List<StringBuilder> starAlignment(final StringBuilder anchor, final List<StringBuilder> seqs) {
 
+		List<StringBuilder> anchors = new ArrayList<StringBuilder>();
+
+		// align
 		for (int i = 0; i < seqs.size(); i++) {
-			dp = align(anchor, seqs.get(i));
-			aligned = tracebackDownmost(dp, anchor, seqs.get(i));
+			int[][] dp = align(anchor, seqs.get(i));
+			StringBuilder[] aligned = tracebackDownmost(dp, anchor, seqs.get(i));
+			anchors.add(aligned[0]);
 			seqs.set(i, aligned[1]);
 		}
+
+		StringBuilder updatedAnchor = new StringBuilder(anchor);
+
+		// updatedAnchor
+		for (int i = 0; i < anchors.size(); i++) {
+			int[][] dp = align(updatedAnchor, anchors.get(i));
+			StringBuilder[] aligned = tracebackDownmost(dp, updatedAnchor, anchors.get(i));
+			updatedAnchor = aligned[0];
+		}
+
+		List<StringBuilder> result = new ArrayList<StringBuilder>();
+		result.add(updatedAnchor);
+
+		// onceGapAlwaysGap
+		for (int i = 0; i < seqs.size(); i++) {
+			int[][] dp = align(updatedAnchor, seqs.get(i));
+			StringBuilder[] aligned = tracebackDownmost(dp, updatedAnchor, seqs.get(i));
+			result.add(aligned[1]);
+		}
+
+		return result;
 	}
 
+	@SuppressWarnings("unused")
 	private static StringBuilder[] tracebackUpmost(int[][] dp,
 			StringBuilder seq1,
 			StringBuilder seq2) {
